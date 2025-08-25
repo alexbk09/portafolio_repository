@@ -226,3 +226,6 @@ Habilita el logging para depurar problemas:
 
 ¡Con esta configuración, tu aplicación estará lista para ofrecer autenticación social! 🎉
 
+
+
+

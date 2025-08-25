@@ -211,3 +211,6 @@ Se incluye un seeder (`TestDataSeeder`) con:
 - Sistema de notificaciones en tiempo real
 - Validación tanto en frontend como backend
 
+
+
+

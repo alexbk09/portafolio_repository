@@ -173,3 +173,6 @@ public function isFreelancer() { return $this->role === 'freelancer'; }
 - La detección de roles es eficiente y segura
 - Los layouts son reutilizables y modulares
 
+
+
+

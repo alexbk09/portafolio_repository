@@ -34,11 +34,6 @@
     <!-- Navigation -->
     <x-navigation.client-nav />
     
-    <!-- Page Content -->
-    <main>
-        @yield('content')
-    </main>
-    
     <!-- Scripts -->
     @stack('scripts')
 </body>

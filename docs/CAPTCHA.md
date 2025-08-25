@@ -137,3 +137,6 @@ function refreshCaptcha() {
 - Verificar que el archivo `config/captcha.php` esté presente
 - Comprobar que los valores de configuración sean válidos
 
+
+
+

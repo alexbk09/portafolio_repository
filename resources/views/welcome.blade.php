@@ -41,9 +41,15 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         .hero-bg {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            background-image: url('images/presentacion.jpeg');
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-blend-mode: overlay;
+            background-color: rgba(0, 0, 0, 0.5);
+            height: 100%;
+            width: 100%;
+            z-index: 1;
         }
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
@@ -124,7 +130,7 @@
             
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div>
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=687&q=80" 
+                    <img src="images/myphoto.jpg" 
                          alt="Tu Nombre" class="rounded-2xl shadow-2xl w-full">
                 </div>
                 

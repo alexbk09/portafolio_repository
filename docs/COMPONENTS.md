@@ -223,3 +223,6 @@ Para migrar una vista existente a usar componentes:
 - Comprobar que los enlaces tengan las URLs correctas
 - Revisar que el middleware de autenticación esté configurado
 
+
+
+
