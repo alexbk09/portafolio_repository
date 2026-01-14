@@ -137,7 +137,7 @@
                         </div>
                         
                         <div class="flex items-center">
-                            <input type="checkbox" id="featured" name="featured" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+                            <input type="checkbox" id="featured" name="featured" value="1" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
                             <label for="featured" class="ml-2 block text-sm text-gray-900">Destacado</label>
                         </div>
                     </div>
@@ -156,35 +156,199 @@
     </div>
 
     <script>
+        // Función para refrescar el token CSRF
+        function refreshCsrfToken() {
+            return fetch('/csrf-token', {
+                method: 'GET',
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.token) {
+                    const metaTag = document.querySelector('meta[name="csrf-token"]');
+                    if (metaTag) {
+                        metaTag.setAttribute('content', data.token);
+                    }
+                    return data.token;
+                }
+                throw new Error('No se pudo obtener el token CSRF');
+            });
+        }
+
         function openModal() {
             document.getElementById('projectModal').classList.remove('hidden');
             document.getElementById('modalTitle').textContent = 'Agregar Proyecto';
             document.getElementById('projectForm').action = '{{ route("admin.portfolio.store") }}';
             document.getElementById('projectForm').method = 'POST';
             document.getElementById('projectForm').reset();
+            
+            // Limpiar vista previa de imagen
+            const imagePreview = document.getElementById('imagePreview');
+            if (imagePreview) {
+                imagePreview.remove();
+            }
+            
+            // Asegurar que el checkbox esté desmarcado
+            document.getElementById('featured').checked = false;
         }
 
         function closeModal() {
             document.getElementById('projectModal').classList.add('hidden');
+            
+            // Limpiar vista previa de imagen
+            const imagePreview = document.getElementById('imagePreview');
+            if (imagePreview) {
+                imagePreview.remove();
+            }
         }
 
         function editProject(projectId) {
-            // Aquí puedes implementar la lógica para cargar los datos del proyecto
-            // Por ahora, solo abrimos el modal
-            document.getElementById('projectModal').classList.remove('hidden');
-            document.getElementById('modalTitle').textContent = 'Editar Proyecto';
-            document.getElementById('projectForm').action = `/admin/portfolio/${projectId}`;
-            document.getElementById('projectForm').method = 'POST';
+            // Obtener el token CSRF del meta tag
+            const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+            const token = csrfMeta ? csrfMeta.getAttribute('content') : '';
             
-            // Agregar el campo _method para PUT
-            let methodField = document.getElementById('projectForm').querySelector('input[name="_method"]');
-            if (!methodField) {
-                methodField = document.createElement('input');
-                methodField.type = 'hidden';
-                methodField.name = '_method';
-                document.getElementById('projectForm').appendChild(methodField);
+            // Mostrar indicador de carga
+            const button = event.target;
+            const originalContent = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            button.disabled = true;
+            
+            // Preparar headers
+            const headers = {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            };
+            
+            // Agregar token CSRF si está disponible
+            if (token) {
+                headers['X-CSRF-TOKEN'] = token;
             }
-            methodField.value = 'PUT';
+            
+            // Función para hacer la petición
+            function makeRequest(url) {
+                return fetch(url, {
+                    method: 'GET',
+                    headers: headers,
+                    credentials: 'same-origin'
+                });
+            }
+            
+            // Función para intentar múltiples rutas
+            function tryMultipleRoutes() {
+                const routes = [
+                    `/admin/portfolio-edit/${projectId}`,
+                    `/admin/portfolio-simple/${projectId}`,
+                    `/admin/portfolio-emergency/${projectId}`,
+                    `/admin/portfolio/${projectId}/edit`
+                ];
+                
+                let currentRouteIndex = 0;
+                
+                function tryNextRoute() {
+                    if (currentRouteIndex >= routes.length) {
+                        throw new Error('No se pudo conectar con ninguna ruta disponible.');
+                    }
+                    
+                    const currentRoute = routes[currentRouteIndex];
+                    console.log(`Intentando ruta: ${currentRoute}`);
+                    
+                    return makeRequest(currentRoute)
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json();
+                            } else if (response.status === 404) {
+                                currentRouteIndex++;
+                                return tryNextRoute();
+                            } else {
+                                throw new Error(`Error ${response.status}: ${response.statusText}`);
+                            }
+                        });
+                }
+                
+                return tryNextRoute();
+            }
+            
+            // Intentar múltiples rutas
+            tryMultipleRoutes()
+            .then(project => {
+                // Verificar si la respuesta contiene un error
+                if (project.error) {
+                    throw new Error(project.message || project.error);
+                }
+                
+                return project;
+            })
+            .then(project => {
+                // Verificar si la respuesta contiene un error
+                if (project.error) {
+                    throw new Error(project.message || project.error);
+                }
+                
+                document.getElementById('projectModal').classList.remove('hidden');
+                document.getElementById('modalTitle').textContent = 'Editar Proyecto';
+                document.getElementById('projectForm').action = `/admin/portfolio/${projectId}`;
+                document.getElementById('projectForm').method = 'POST';
+                
+                // Agregar el campo _method para PUT
+                let methodField = document.getElementById('projectForm').querySelector('input[name="_method"]');
+                if (!methodField) {
+                    methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    document.getElementById('projectForm').appendChild(methodField);
+                }
+                methodField.value = 'PUT';
+                
+                // Llenar los campos con los datos del proyecto
+                document.getElementById('title').value = project.title || '';
+                document.getElementById('description').value = project.description || '';
+                document.getElementById('technologies').value = project.technologies || '';
+                document.getElementById('url').value = project.url || '';
+                document.getElementById('github_url').value = project.github_url || '';
+                document.getElementById('featured').checked = project.featured || false;
+                
+                // Mostrar imagen actual si existe
+                const imagePreview = document.getElementById('imagePreview');
+                if (project.image) {
+                    if (!imagePreview) {
+                        const previewDiv = document.createElement('div');
+                        previewDiv.id = 'imagePreview';
+                        previewDiv.className = 'mt-2';
+                        previewDiv.innerHTML = `
+                            <p class="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                            <img src="/storage/${project.image}" alt="Imagen actual" class="w-32 h-32 object-cover rounded-lg">
+                        `;
+                        document.getElementById('image').parentNode.appendChild(previewDiv);
+                    } else {
+                        imagePreview.innerHTML = `
+                            <p class="text-sm text-gray-600 mb-2">Imagen actual:</p>
+                            <img src="/storage/${project.image}" alt="Imagen actual" class="w-32 h-32 object-cover rounded-lg">
+                        `;
+                    }
+                } else {
+                    // Limpiar vista previa si no hay imagen
+                    if (imagePreview) {
+                        imagePreview.remove();
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                let errorMessage = 'Error al cargar los datos del proyecto.';
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    errorMessage = 'Error de conexión. Verifica tu conexión a internet e intenta nuevamente.';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                alert(errorMessage);
+            })
+            .finally(() => {
+                // Restaurar el botón
+                button.innerHTML = originalContent;
+                button.disabled = false;
+            });
         }
 
         // Cerrar modal al hacer clic fuera de él
@@ -192,6 +356,44 @@
             if (e.target === this) {
                 closeModal();
             }
+        });
+
+        // Validación de archivos
+        document.getElementById('image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validar tamaño (2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('La imagen no puede ser mayor a 2MB');
+                    this.value = '';
+                    return;
+                }
+                
+                // Validar tipo
+                const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif'];
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Solo se permiten archivos de imagen (JPEG, PNG, JPG, GIF)');
+                    this.value = '';
+                    return;
+                }
+                
+                console.log('Archivo válido seleccionado:', file.name, file.size, file.type);
+            }
+        });
+
+        // Validación del formulario antes de enviar
+        document.getElementById('projectForm').addEventListener('submit', function(e) {
+            const title = document.getElementById('title').value.trim();
+            const description = document.getElementById('description').value.trim();
+            const technologies = document.getElementById('technologies').value.trim();
+            
+            if (!title || !description || !technologies) {
+                e.preventDefault();
+                alert('Por favor, completa todos los campos requeridos');
+                return;
+            }
+            
+            console.log('Formulario enviado con featured:', document.getElementById('featured').checked);
         });
     </script>
 @endsection

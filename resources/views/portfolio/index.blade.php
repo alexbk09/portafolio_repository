@@ -86,6 +86,10 @@
                                 </div>
                                 
                                 <div class="flex space-x-3">
+                                        <a href="{{ route('portfolio.show', $project->id) }}" target="_blank" class="flex-1 bg-primary text-white text-center py-2 px-4 rounded-lg hover:bg-secondary transition-colors">
+                                            <i class="fas fa-external-link-alt mr-2"></i>
+                                            Ver Descripción
+                                        </a>
                                     @if($project->url)
                                         <a href="{{ $project->url }}" target="_blank" class="flex-1 bg-primary text-white text-center py-2 px-4 rounded-lg hover:bg-secondary transition-colors">
                                             <i class="fas fa-external-link-alt mr-2"></i>

@@ -45,6 +45,16 @@ Route::get('/refresh-captcha', function () {
     return response()->json($captcha);
 })->name('refresh.captcha');
 
+// Ruta para refrescar token CSRF
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+})->name('csrf.token');
+
+// Ruta de emergencia para editar portfolio (fuera del middleware de roles)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/admin/portfolio-emergency/{id}', [PortfolioController::class, 'editById'])->name('admin.portfolio.edit.emergency');
+});
+
 // Rutas de autenticación social
 Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirect'])->name('social.redirect');
 Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'callback'])->name('social.callback');
@@ -106,8 +116,15 @@ Route::middleware(['auth'])->group(function () {
         // Portfolio Admin Routes
         Route::get('/admin/portfolio', [PortfolioController::class, 'admin'])->name('admin.portfolio');
         Route::post('/admin/portfolio', [PortfolioController::class, 'store'])->name('admin.portfolio.store');
+        Route::get('/admin/portfolio/{project}/edit', [PortfolioController::class, 'edit'])->name('admin.portfolio.edit');
         Route::put('/admin/portfolio/{project}', [PortfolioController::class, 'update'])->name('admin.portfolio.update');
         Route::delete('/admin/portfolio/{project}', [PortfolioController::class, 'destroy'])->name('admin.portfolio.destroy');
+        
+        // Ruta alternativa para editar proyecto (fallback)
+        Route::get('/admin/portfolio-edit/{id}', [PortfolioController::class, 'editById'])->name('admin.portfolio.edit.alt');
+        
+        // Ruta simple para editar proyecto (sin middleware de roles)
+        Route::get('/admin/portfolio-simple/{id}', [PortfolioController::class, 'editById'])->name('admin.portfolio.edit.simple');
         
         // Contact Admin Routes
         Route::get('/admin/contact', [ContactController::class, 'admin'])->name('admin.contact');
